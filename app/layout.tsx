@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BioRender Enterprise Demo Agent",
-  description:
-    "Hackathon demo shell for a BioRender enterprise sales automation flow.",
+  title: "BioRender AI",
+  description: "",
 };
 
 export default function RootLayout({
