@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import type { FrozenPlan } from "@/lib/frozen-plan";
 
@@ -22,39 +22,51 @@ type ErrorResponse = {
   ok?: boolean;
 };
 
-const STATUS_ORDER: StatusPhase[] = [
-  "Idle",
-  "Researching company",
-  "Generating demo plan",
-  "Running BioRender agent",
-  "Draft generated",
-  "Error",
-];
-
 const orgoWorkspaceUrl = process.env.NEXT_PUBLIC_ORGO_COMPUTER_ID
   ? `https://www.orgo.ai/workspaces/${process.env.NEXT_PUBLIC_ORGO_COMPUTER_ID}`
   : null;
 
-function statusIndex(status: StatusPhase) {
-  return STATUS_ORDER.indexOf(status);
+function StatusLine({ status, error }: { status: StatusPhase; error: string | null }) {
+  if (status === "Idle" && !error) return null;
+  if (status === "Error" && error) {
+    return (
+      <p className="mt-3 flex items-center gap-2 text-xs text-[var(--danger)]">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
+        {error}
+      </p>
+    );
+  }
+  if (status === "Draft generated") {
+    return (
+      <p className="mt-3 flex items-center gap-2 text-xs text-[var(--accent)]">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+        Timeline draft created in BioRender
+      </p>
+    );
+  }
+  return (
+    <p className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+      <span className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+      {status}...
+    </p>
+  );
 }
 
-function SectionCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
   return (
-    <section className="rounded-[24px] border border-[color:var(--line)] bg-[color:var(--panel)] p-5 shadow-[0_18px_60px_rgba(36,29,14,0.08)]">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--muted)]">
-        {label}
-      </p>
-      <p className="mt-3 text-sm leading-6 text-[color:var(--ink)] sm:text-[0.96rem]">
-        {value}
-      </p>
-    </section>
+    <button
+      className="text-[0.65rem] uppercase tracking-widest text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      type="button"
+    >
+      {copied ? "Copied" : "Copy"}
+    </button>
   );
 }
 
@@ -68,14 +80,6 @@ export default function Home() {
   const [isRunning, startRunning] = useTransition();
 
   const canRunAgent = Boolean(planResult?.plan.finalBioRenderPrompt) && !isRunning;
-
-  const statusMessage = useMemo(() => {
-    if (status === "Idle" && planResult) {
-      return "Plan ready. Open the Orgo workspace in a separate tab if needed, then run the BioRender automation when you are ready.";
-    }
-
-    return error;
-  }, [error, planResult, status]);
 
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,9 +122,7 @@ export default function Home() {
   }
 
   async function runAgent() {
-    if (!planResult) {
-      return;
-    }
+    if (!planResult) return;
 
     setError(null);
     setStatus("Running BioRender agent");
@@ -157,169 +159,154 @@ export default function Home() {
     });
   }
 
+  const plan = planResult?.plan;
+
   return (
-    <main className="min-h-screen bg-[color:var(--paper)] px-4 py-6 text-[color:var(--ink)] sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-5xl">
-        <section className="rounded-[32px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-6 shadow-[0_24px_80px_rgba(36,29,14,0.12)] sm:p-8">
-          <div className="max-w-2xl">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.34em] text-[color:var(--accent)]">
-              Autonomous Solutions Engineer for BioRender
-            </p>
-            <h1 className="mt-4 font-[family:var(--font-display)] text-4xl leading-tight sm:text-5xl">
-              Generate one GTM-ready timeline draft, then run one BioRender automation.
-            </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[color:var(--muted-strong)] sm:text-[0.98rem]">
-              Hackathon demo only. Frozen happy path: company URL in, BioRender
-              timeline draft out, then a narrow Orgo run on the live VM.
-            </p>
+    <main className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-4xl">
+        {/* ── Header ── */}
+        <header className="mb-10">
+          <h1 className="font-[family-name:var(--font-display)] text-5xl tracking-tight text-[var(--text)] sm:text-6xl">
+            Catalyse
+          </h1>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Company URL <span className="text-[var(--text-dim)]">&rarr;</span> BioRender timeline draft
+          </p>
+        </header>
+
+        {/* ── Input ── */}
+        <form onSubmit={handleGenerate}>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded-lg border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] outline-none transition focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-soft)]"
+              name="companyUrl"
+              onChange={(event) => setCompanyUrl(event.target.value)}
+              placeholder="https://www.modernatx.com/"
+              value={companyUrl}
+            />
+            <button
+              className="whitespace-nowrap rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isGenerating}
+              type="submit"
+            >
+              {isGenerating ? "Generating..." : "Generate"}
+            </button>
           </div>
 
-          <form className="mt-8 space-y-4" onSubmit={handleGenerate}>
-            <label className="block">
-              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--muted)]">
-                Company URL
-              </span>
+          <div className="mt-3 flex items-center gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--text-dim)]">
               <input
-                className="mt-3 w-full rounded-[20px] border border-[color:var(--line)] bg-white px-4 py-3 text-sm text-[color:var(--ink)] outline-none transition focus:border-[color:var(--accent)] focus:ring-2 focus:ring-[color:var(--accent-soft)]"
-                name="companyUrl"
-                onChange={(event) => setCompanyUrl(event.target.value)}
-                placeholder="https://www.modernatx.com/"
-                value={companyUrl}
+                checked={useFallbackDraft}
+                className="h-3 w-3 accent-[var(--accent)]"
+                onChange={(event) => setUseFallbackDraft(event.target.checked)}
+                type="checkbox"
               />
+              Quick test
             </label>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {planResult?.usedFallback && (
+              <span className="rounded-full border border-[var(--border-strong)] px-2 py-0.5 text-[0.6rem] uppercase tracking-widest text-[var(--text-muted)]">
+                Fallback
+              </span>
+            )}
+          </div>
+
+          <StatusLine status={status} error={error} />
+        </form>
+
+        {/* ── Results ── */}
+        {plan && (
+          <div className="animate-fade-up mt-10">
+            {/* Action bar */}
+            <div className="mb-6 flex items-center gap-3">
               <button
-                className="inline-flex items-center justify-center rounded-full bg-[color:var(--ink)] px-5 py-3 text-sm font-semibold text-[color:var(--paper)] transition hover:bg-[color:var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isGenerating}
-                type="submit"
+                className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canRunAgent}
+                onClick={runAgent}
+                type="button"
               >
-                {isGenerating ? "Generating..." : "Generate tailored BioRender draft"}
+                {isRunning ? "Running..." : "Run in BioRender"}
               </button>
-
-              {planResult ? (
-                <button
-                  className="inline-flex items-center justify-center rounded-full border border-[color:var(--line-strong)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={!canRunAgent}
-                  onClick={runAgent}
-                  type="button"
-                >
-                  {isRunning ? "Running..." : "Run in BioRender"}
-                </button>
-              ) : null}
-
-              {orgoWorkspaceUrl ? (
+              {orgoWorkspaceUrl && (
                 <a
-                  className="inline-flex items-center justify-center rounded-full border border-[color:var(--line-strong)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                  className="rounded-lg border border-[var(--border-strong)] px-4 py-2.5 text-sm text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   href={orgoWorkspaceUrl}
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Open Orgo Workspace
+                  Open Workspace
                 </a>
-              ) : null}
+              )}
             </div>
 
-            <label className="flex items-start gap-3 rounded-[20px] border border-[color:var(--line)] bg-[color:var(--panel)] px-4 py-3">
-              <input
-                checked={useFallbackDraft}
-                className="mt-1 h-4 w-4 accent-[color:var(--accent)]"
-                onChange={(event) => setUseFallbackDraft(event.target.checked)}
-                type="checkbox"
-              />
-              <span>
-                <span className="block text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--muted)]">
-                  Quick test mode
-                </span>
-                <span className="mt-1 block text-sm leading-6 text-[color:var(--muted-strong)]">
-                  Skip the OpenAI call and use the built-in Moderna fallback draft.
-                </span>
-              </span>
-            </label>
-          </form>
+            {/* Two-column layout */}
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+              {/* Left: Intel briefing */}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <p className="text-lg font-medium text-[var(--text)]">{plan.companyName}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
+                    {plan.companySummary}
+                  </p>
+                </div>
 
-          <section className="mt-8 rounded-[24px] border border-[color:var(--line)] bg-[color:var(--panel)] p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--muted)]">
-                  Status
-                </p>
-                <p className="mt-3 text-xl font-semibold text-[color:var(--ink)]">
-                  {status}
-                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoBlock label="BioRender Fit" value={plan.whyBioRenderFit} />
+                  <InfoBlock label="Buyer Persona" value={plan.recommendedBuyerPersona} />
+                  <InfoBlock label="Demo Angle" value={plan.recommendedDemoAngle} />
+                  <InfoBlock label="Next Step" value={plan.recommendedNextStep} />
+                </div>
               </div>
-              {planResult?.usedFallback ? (
-                <span className="rounded-full border border-[color:var(--accent-soft)] bg-[color:var(--accent-faint)] px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]">
-                  Moderna fallback
-                </span>
-              ) : null}
+
+              {/* Right: The prompt (star of the show) */}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-[var(--accent-soft)] bg-[var(--accent-glow)] p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent)]">
+                      BioRender Prompt
+                    </p>
+                    <CopyButton text={plan.finalBioRenderPrompt} />
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+                    {plan.finalBioRenderPrompt}
+                  </p>
+                </div>
+
+                {/* Timeline steps */}
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                    {plan.title}
+                  </p>
+                  <ol className="mt-4 space-y-3">
+                    {plan.timelineSteps.map((step, i) => (
+                      <li key={i} className="flex gap-3 text-xs">
+                        <span className="mt-px font-semibold text-[var(--accent)]">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div>
+                          <span className="font-medium text-[var(--text)]">{step.label}</span>
+                          <span className="text-[var(--text-muted)]"> &mdash; {step.description}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
             </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {STATUS_ORDER.map((phase) => {
-                const current = statusIndex(status);
-                const phaseIndex = statusIndex(phase);
-                const isActive = phase === status;
-                const isComplete =
-                  current > phaseIndex && status !== "Error" && phase !== "Error";
-
-                return (
-                  <span
-                    className={`rounded-full border px-3 py-1 text-[0.72rem] font-medium ${
-                      isActive
-                        ? "border-[color:var(--accent)] bg-[color:var(--accent-faint)] text-[color:var(--accent)]"
-                        : isComplete
-                          ? "border-[color:var(--line-strong)] bg-white text-[color:var(--ink)]"
-                          : "border-[color:var(--line)] bg-transparent text-[color:var(--muted)]"
-                    }`}
-                    key={phase}
-                  >
-                    {phase}
-                  </span>
-                );
-              })}
-            </div>
-
-            {statusMessage ? (
-              <p className="mt-4 text-sm leading-6 text-[color:var(--muted-strong)]">
-                {statusMessage}
-              </p>
-            ) : null}
-          </section>
-
-          {planResult ? (
-            <div className="mt-8 grid gap-4">
-              <SectionCard label="Company" value={planResult.plan.companyName} />
-              <SectionCard label="Summary" value={planResult.plan.companySummary} />
-              <SectionCard
-                label="Why BioRender fit"
-                value={planResult.plan.whyBioRenderFit}
-              />
-              <SectionCard
-                label="Buyer persona"
-                value={planResult.plan.recommendedBuyerPersona}
-              />
-              <SectionCard
-                label="Demo angle"
-                value={planResult.plan.recommendedDemoAngle}
-              />
-              <SectionCard
-                label="Recommended next step"
-                value={planResult.plan.recommendedNextStep}
-              />
-
-              <section className="rounded-[24px] border border-[color:var(--line)] bg-[color:var(--panel)] p-5 shadow-[0_18px_60px_rgba(36,29,14,0.08)]">
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-[color:var(--muted)]">
-                  Final BioRender prompt
-                </p>
-                <p className="mt-3 text-sm leading-6 text-[color:var(--ink)] sm:text-[0.96rem]">
-                  {planResult.plan.finalBioRenderPrompt}
-                </p>
-              </section>
-            </div>
-          ) : null}
-        </section>
+          </div>
+        )}
       </div>
     </main>
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+      <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-[var(--text-dim)]">
+        {label}
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">{value}</p>
+    </div>
   );
 }

@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f6f1e7;
-  --panel: rgba(255, 252, 246, 0.78);
-  --panel-strong: rgba(255, 250, 242, 0.9);
-  --line: rgba(108, 89, 61, 0.16);
-  --line-strong: rgba(108, 89, 61, 0.32);
-  --ink: #20180e;
-  --muted: #7a6a57;
-  --muted-strong: #5f513f;
+  --bg: #f6f1e7;
+  --surface: rgba(255, 252, 246, 0.78);
+  --surface-raised: rgba(255, 250, 242, 0.92);
+  --border: rgba(108, 89, 61, 0.14);
+  --border-strong: rgba(108, 89, 61, 0.28);
+  --text: #20180e;
+  --text-muted: #7a6a57;
+  --text-dim: #a89b8a;
   --accent: #a5451f;
-  --accent-soft: rgba(165, 69, 31, 0.18);
-  --accent-faint: rgba(165, 69, 31, 0.08);
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --accent-soft: rgba(165, 69, 31, 0.15);
+  --accent-glow: rgba(165, 69, 31, 0.06);
+  --danger: #c0392b;
 }
 
 * {
@@ -21,19 +21,44 @@
 
 html {
   background:
-    radial-gradient(circle at top left, rgba(165, 69, 31, 0.14), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(32, 24, 14, 0.1), transparent 28%),
-    var(--paper);
+    radial-gradient(ellipse at top left, rgba(165, 69, 31, 0.09), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(32, 24, 14, 0.06), transparent 40%),
+    var(--bg);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  color: var(--ink);
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 input {
   font: inherit;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
 }
