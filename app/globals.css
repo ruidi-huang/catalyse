@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+:root {
+  --paper: #f6f1e7;
+  --panel: rgba(255, 252, 246, 0.78);
+  --panel-strong: rgba(255, 250, 242, 0.9);
+  --line: rgba(108, 89, 61, 0.16);
+  --line-strong: rgba(108, 89, 61, 0.32);
+  --ink: #20180e;
+  --muted: #7a6a57;
+  --muted-strong: #5f513f;
+  --accent: #a5451f;
+  --accent-soft: rgba(165, 69, 31, 0.18);
+  --accent-faint: rgba(165, 69, 31, 0.08);
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(165, 69, 31, 0.14), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(32, 24, 14, 0.1), transparent 28%),
+    var(--paper);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
