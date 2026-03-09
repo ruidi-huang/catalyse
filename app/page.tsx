@@ -216,87 +216,137 @@ export default function Home() {
 
         {/* ── Results ── */}
         {plan && (
-          <div className="animate-fade-up mt-10">
-            {/* Action bar */}
-            <div className="mb-6 flex items-center gap-3">
-              <button
-                className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!canRunAgent}
-                onClick={runAgent}
-                type="button"
-              >
-                {isRunning ? "Running..." : "Run in BioRender"}
-              </button>
-              {orgoWorkspaceUrl && (
-                <a
-                  className="rounded-lg border border-[var(--border-strong)] px-4 py-2.5 text-sm text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                  href={orgoWorkspaceUrl}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Open Workspace
-                </a>
-              )}
-            </div>
-
-            {/* Two-column layout */}
-            <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-              {/* Left: Intel briefing */}
-              <div className="space-y-4">
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-lg font-medium text-[var(--text)]">{plan.companyName}</p>
-                  <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
-                    {plan.companySummary}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <InfoBlock label="BioRender Fit" value={plan.whyBioRenderFit} />
-                  <InfoBlock label="Buyer Persona" value={plan.recommendedBuyerPersona} />
-                  <InfoBlock label="Demo Angle" value={plan.recommendedDemoAngle} />
-                  <InfoBlock label="Next Step" value={plan.recommendedNextStep} />
-                </div>
-              </div>
-
-              {/* Right: The prompt (star of the show) */}
-              <div className="space-y-4">
-                <div className="rounded-xl border border-[var(--accent-soft)] bg-[var(--accent-glow)] p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent)]">
-                      BioRender Prompt
-                    </p>
-                    <CopyButton text={plan.finalBioRenderPrompt} />
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
-                    {plan.finalBioRenderPrompt}
-                  </p>
-                </div>
-
-                {/* Timeline steps */}
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
-                    {plan.title}
-                  </p>
-                  <ol className="mt-4 space-y-3">
-                    {plan.timelineSteps.map((step, i) => (
-                      <li key={i} className="flex gap-3 text-xs">
-                        <span className="mt-px font-semibold text-[var(--accent)]">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <div>
-                          <span className="font-medium text-[var(--text)]">{step.label}</span>
-                          <span className="text-[var(--text-muted)]"> &mdash; {step.description}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ResultsPanel
+            plan={plan}
+            canRunAgent={canRunAgent}
+            isRunning={isRunning}
+            onRunAgent={runAgent}
+          />
         )}
       </div>
     </main>
+  );
+}
+
+type ResultsTab = "prompt" | "research" | "timeline";
+
+function ResultsPanel({
+  plan,
+  canRunAgent,
+  isRunning,
+  onRunAgent,
+}: {
+  plan: FrozenPlan;
+  canRunAgent: boolean;
+  isRunning: boolean;
+  onRunAgent: () => void;
+}) {
+  const [tab, setTab] = useState<ResultsTab>("prompt");
+
+  const tabs: { key: ResultsTab; label: string }[] = [
+    { key: "prompt", label: "Prompt" },
+    { key: "research", label: "Research" },
+    { key: "timeline", label: "Timeline" },
+  ];
+
+  return (
+    <div className="animate-fade-up mt-10">
+      {/* Action bar + tabs */}
+      <div className="flex items-center justify-between border-b border-[var(--border)]">
+        <div className="flex gap-0">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`px-4 py-2.5 text-xs font-medium transition ${
+                tab === t.key
+                  ? "border-b-2 border-[var(--accent)] text-[var(--accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+              onClick={() => setTab(t.key)}
+              type="button"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {orgoWorkspaceUrl && (
+            <a
+              className="px-3 py-1.5 text-xs text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+              href={orgoWorkspaceUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Open Workspace
+            </a>
+          )}
+          <button
+            className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canRunAgent}
+            onClick={onRunAgent}
+            type="button"
+          >
+            {isRunning ? "Running..." : "Run in BioRender"}
+          </button>
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div className="pt-6">
+        {tab === "prompt" && (
+          <div className="rounded-xl border border-[var(--accent-soft)] bg-[var(--accent-glow)] p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--accent)]">
+                BioRender Prompt
+              </p>
+              <CopyButton text={plan.finalBioRenderPrompt} />
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-[var(--text)]">
+              {plan.finalBioRenderPrompt}
+            </p>
+          </div>
+        )}
+
+        {tab === "research" && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+              <p className="text-lg font-medium text-[var(--text)]">{plan.companyName}</p>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
+                {plan.companySummary}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InfoBlock label="BioRender Fit" value={plan.whyBioRenderFit} />
+              <InfoBlock label="Buyer Persona" value={plan.recommendedBuyerPersona} />
+              <InfoBlock label="Demo Angle" value={plan.recommendedDemoAngle} />
+              <InfoBlock label="Next Step" value={plan.recommendedNextStep} />
+            </div>
+          </div>
+        )}
+
+        {tab === "timeline" && (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+              {plan.title}
+            </p>
+            <ol className="mt-5 space-y-4">
+              {plan.timelineSteps.map((step, i) => (
+                <li key={i} className="flex gap-3 text-sm">
+                  <span className="mt-px font-semibold text-[var(--accent)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <span className="font-medium text-[var(--text)]">{step.label}</span>
+                    <span className="text-[var(--text-muted)]"> &mdash; {step.description}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
