@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import type { FrozenPlan } from "@/lib/frozen-plan";
 
@@ -22,11 +22,91 @@ type ErrorResponse = {
   ok?: boolean;
 };
 
+const LOADING_PHRASES = [
+  "Scanning company website...",
+  "Reading public pipeline data...",
+  "Identifying scientific focus...",
+  "Finding the BioRender angle...",
+  "Crafting timeline prompt...",
+  "Almost there...",
+];
+
+function useRotatingText(phrases: string[], active: boolean) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setIndex(0);
+      return;
+    }
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % phrases.length);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [active, phrases.length]);
+
+  return active ? phrases[index] : null;
+}
+
+function OnboardingOverlay({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--text)]/40 backdrop-blur-sm">
+      <div className="mx-4 w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface-raised)] p-8 shadow-xl">
+        <h2 className="font-[family-name:var(--font-display)] text-3xl text-[var(--text)]">
+          Catalyse
+        </h2>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
+          AI-native enterprise demo creation for BioRender
+        </p>
+
+        <ol className="mt-6 space-y-4">
+          {[
+            { step: "1", text: "Paste any biotech company URL" },
+            {
+              step: "2",
+              text: "AI researches the company and finds the best BioRender use case",
+            },
+            {
+              step: "3",
+              text: "A tailored BioRender draft is generated automatically",
+            },
+          ].map((item) => (
+            <li key={item.step} className="flex gap-3 text-sm">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-semibold text-white">
+                {item.step}
+              </span>
+              <span className="mt-0.5 text-[var(--text-muted)]">
+                {item.text}
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        <button
+          className="mt-8 w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+          onClick={onDismiss}
+          type="button"
+        >
+          Get started
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const orgoWorkspaceUrl = process.env.NEXT_PUBLIC_ORGO_COMPUTER_ID
   ? `https://www.orgo.ai/workspaces/${process.env.NEXT_PUBLIC_ORGO_COMPUTER_ID}`
   : null;
 
-function StatusLine({ status, error }: { status: StatusPhase; error: string | null }) {
+function StatusLine({
+  status,
+  error,
+  loadingPhrase,
+}: {
+  status: StatusPhase;
+  error: string | null;
+  loadingPhrase: string | null;
+}) {
   if (status === "Idle" && !error) return null;
   if (status === "Error" && error) {
     return (
@@ -44,10 +124,15 @@ function StatusLine({ status, error }: { status: StatusPhase; error: string | nu
       </p>
     );
   }
+  const displayText =
+    loadingPhrase ??
+    (status === "Running BioRender agent"
+      ? "Automating BioRender..."
+      : `${status}...`);
   return (
     <p className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
       <span className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-      {status}...
+      {displayText}
     </p>
   );
 }
@@ -75,11 +160,19 @@ export default function Home() {
   const [planResult, setPlanResult] = useState<GeneratePlanResult | null>(null);
   const [status, setStatus] = useState<StatusPhase>("Idle");
   const [error, setError] = useState<string | null>(null);
-  const [useFallbackDraft, setUseFallbackDraft] = useState(false);
   const [isGenerating, startGenerating] = useTransition();
   const [isRunning, startRunning] = useTransition();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const canRunAgent = Boolean(planResult?.plan.finalBioRenderPrompt) && !isRunning;
+  const loadingPhrase = useRotatingText(LOADING_PHRASES, isGenerating);
+  const canRunAgent =
+    Boolean(planResult?.plan.finalBioRenderPrompt) && !isRunning;
+
+  useEffect(() => {
+    if (!localStorage.getItem("catalyse-onboarded")) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,10 +187,12 @@ export default function Home() {
         const response = await fetch("/api/generate-plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companyUrl, useFallbackDraft }),
+          body: JSON.stringify({ companyUrl }),
         });
 
-        const data = (await response.json()) as GeneratePlanResult | ErrorResponse;
+        const data = (await response.json()) as
+          | GeneratePlanResult
+          | ErrorResponse;
 
         if (!response.ok || !("plan" in data)) {
           const message =
@@ -163,15 +258,32 @@ export default function Home() {
 
   return (
     <main className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+      {showOnboarding && (
+        <OnboardingOverlay
+          onDismiss={() => {
+            localStorage.setItem("catalyse-onboarded", "1");
+            setShowOnboarding(false);
+          }}
+        />
+      )}
       <div className="mx-auto w-full max-w-4xl">
         {/* ── Header ── */}
         <header className="mb-10">
           <h1 className="font-[family-name:var(--font-display)] text-5xl tracking-tight text-[var(--text)] sm:text-6xl">
             Catalyse
           </h1>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Company URL <span className="text-[var(--text-dim)]">&rarr;</span> BioRender timeline draft
-          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-sm text-[var(--text-muted)]">
+              Turn any biotech company into a tailored BioRender demo
+            </p>
+            <button
+              className="shrink-0 rounded-full border border-[var(--border-strong)] px-2.5 py-0.5 text-[0.65rem] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              onClick={() => setShowOnboarding(true)}
+              type="button"
+            >
+              ?
+            </button>
+          </div>
         </header>
 
         {/* ── Input ── */}
@@ -193,25 +305,11 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-3 flex items-center gap-4">
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--text-dim)]">
-              <input
-                checked={useFallbackDraft}
-                className="h-3 w-3 accent-[var(--accent)]"
-                onChange={(event) => setUseFallbackDraft(event.target.checked)}
-                type="checkbox"
-              />
-              Quick test
-            </label>
-
-            {planResult?.usedFallback && (
-              <span className="rounded-full border border-[var(--border-strong)] px-2 py-0.5 text-[0.6rem] uppercase tracking-widest text-[var(--text-muted)]">
-                Fallback
-              </span>
-            )}
-          </div>
-
-          <StatusLine status={status} error={error} />
+          <StatusLine
+            status={status}
+            error={error}
+            loadingPhrase={loadingPhrase}
+          />
         </form>
 
         {/* ── Results ── */}
@@ -311,14 +409,19 @@ function ResultsPanel({
         {tab === "research" && (
           <div className="space-y-4">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-              <p className="text-lg font-medium text-[var(--text)]">{plan.companyName}</p>
+              <p className="text-lg font-medium text-[var(--text)]">
+                {plan.companyName}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
                 {plan.companySummary}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <InfoBlock label="BioRender Fit" value={plan.whyBioRenderFit} />
-              <InfoBlock label="Buyer Persona" value={plan.recommendedBuyerPersona} />
+              <InfoBlock
+                label="Buyer Persona"
+                value={plan.recommendedBuyerPersona}
+              />
               <InfoBlock label="Demo Angle" value={plan.recommendedDemoAngle} />
               <InfoBlock label="Next Step" value={plan.recommendedNextStep} />
             </div>
@@ -337,8 +440,13 @@ function ResultsPanel({
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <span className="font-medium text-[var(--text)]">{step.label}</span>
-                    <span className="text-[var(--text-muted)]"> &mdash; {step.description}</span>
+                    <span className="font-medium text-[var(--text)]">
+                      {step.label}
+                    </span>
+                    <span className="text-[var(--text-muted)]">
+                      {" "}
+                      &mdash; {step.description}
+                    </span>
                   </div>
                 </li>
               ))}
@@ -356,7 +464,9 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
       <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-[var(--text-dim)]">
         {label}
       </p>
-      <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">{value}</p>
+      <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
+        {value}
+      </p>
     </div>
   );
 }
