@@ -130,10 +130,10 @@ function StatusLine({
       ? "Automating BioRender..."
       : `${status}...`);
   return (
-    <p className="mt-3 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-      <span className="animate-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-      {displayText}
-    </p>
+    <div className="mt-4 flex items-center gap-3 rounded-lg border border-[var(--accent-soft)] bg-[var(--accent-glow)] px-4 py-3">
+      <span className="animate-pulse-dot inline-block h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" />
+      <span className="text-sm font-medium text-[var(--accent)]">{displayText}</span>
+    </div>
   );
 }
 
