@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Catalyse
 
-## Getting Started
+Catalyse is an AI solutions engineer for BioRender.
 
-First, run the development server:
+It helps BioRender scale enterprise demo creation by turning a target account into a tailored first draft, fast. Instead of starting from a blank canvas, teams can generate account-specific scientific visuals that are ready for review, refinement, and conversation.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Why this matters
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Enterprise adoption is high leverage.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+A small share of enterprise customers can drive a large share of revenue, but winning those accounts often depends on manual, account-by-account demo creation. That means someone has to research the company, identify the right BioRender use case, and build a tailored first draft by hand.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Catalyse makes that workflow scalable.
 
-## Learn More
+By accelerating customized demo creation, it helps teams move faster on enterprise sales and onboarding, while giving scientific teams faster access to better communication tools so they can spend less time on repetitive presentation work and more time on research.
 
-To learn more about Next.js, take a look at the following resources:
+## What it does
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Given a company URL, Catalyse:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Understands the company and its context
+2. Identifies the most relevant BioRender use case
+3. Generates a tailored demo plan
+4. Produces a BioRender-ready prompt
+5. Creates a first draft directly in BioRender
 
-## Deploy on Vercel
+The result is a faster path from account context to a tailored scientific visual.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Demo flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The current demo focuses on one clear workflow:
+
+- Input a company URL
+- Generate an account-specific GTM summary
+- Create a BioRender-ready prompt
+- Generate a tailored first draft in BioRender
+- Review and refine with a human in the loop
+
+## Who it is for
+
+Catalyse is designed for teams that need to create tailored scientific visuals at scale, especially for:
+
+- Enterprise sales
+- Solutions engineering
+- Customer onboarding
+- Scientific communication workflows
+
+## Project goal
+
+Catalyse is built around a simple idea:
+
+**Turn enterprise demo creation from a manual services workflow into a scalable product workflow.**
+
+## Track
+
+Scientific Data Visualization
+
+## Future direction
+
+Catalyse can extend beyond one-off demo generation into a broader system for:
+
+- Scalable enterprise onboarding
+- Customized scientific storytelling
+- Faster internal and external communication
+- Higher-leverage adoption workflows for scientific software
+
+## Name
+
+**Catalyse** reflects the goal of the project: accelerating adoption, accelerating communication, and helping scientific teams move faster on work that matters.
